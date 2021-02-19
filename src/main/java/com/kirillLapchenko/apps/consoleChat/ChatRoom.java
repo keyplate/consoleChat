@@ -1,2 +1,4 @@
-package com.kirillLapchenko.apps.consoleChat;public class ChatRoom {
+package com.kirillLapchenko.apps.consoleChat;
+
+public class ChatRoom {
 }

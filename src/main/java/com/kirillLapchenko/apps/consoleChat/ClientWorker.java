@@ -1,66 +1,71 @@
 package com.kirillLapchenko.apps.consoleChat;
 
-import javax.swing.*;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.ServerSocket;
 import java.net.Socket;
 
-class ClientWorker extends Thread implements Runnable {
+public class ClientWorker implements Runnable {
     private Socket clientSocket;
-    private JTextArea textArea;
-    private Client client;
-
+    private final int CLIENT_ID;
+    private BufferedReader reader;
+    private PrintWriter writer;
+    private String lastInput = "";
+    private boolean isConnectionRequired = false;
+    private boolean isConnected = false;
+    private Observer server;
+    private ClientWorker subscriber;
 
     //Constructor
-    ClientWorker(Socket client, JTextArea textArea) {
+    ClientWorker(Socket client, int clientId, Observer server) throws IOException {
         this.clientSocket = client;
-        this.textArea = textArea;
+        CLIENT_ID = clientId;
+        reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        writer = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+        this.server = server;
     }
 
+    @Override
     public void run() {
-        String line;
-        BufferedReader in;
-        in = null;
-        PrintWriter out = null;
-        client = new Client((int) getId());
-        try {
-            in = new BufferedReader(new
-                    InputStreamReader(clientSocket.getInputStream()));
-            out = new
-                    PrintWriter(clientSocket.getOutputStream(), true);
-        } catch (IOException e) {
-            System.out.println("in or out failed");
-            System.exit(-1);
-        }
-        try {
-            if (logIn(in, out))
-                out.println("Welcome back!");
-
-
-            while (true) {
-                line = in.readLine();
-                out.println(line);
-                textArea.append(line);
-
+        while (true) {
+            try {
+                lastInput = reader.readLine();
+                isConnectionCalled();
+                if(isConnectionRequired && !isConnected){
+                    getConnection();
+                }
+                if(isConnected){
+                    chat();
+                    lastInput = null;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
         }
     }
 
-    private boolean logIn(BufferedReader reader, PrintWriter printer) throws IOException {
-        for (int i = 0; i < 3; i++) {
-            String password, login;
-            printer.println("Please enter your login");
-            login = reader.readLine();
-            printer.println("Please enter your password");
-            password = reader.readLine();
-            if (client.verify(login, password))
-                return true;
-            printer.println("Incorrect Login or Password");
+    void isConnectionCalled() throws Exception {
+        if (lastInput.startsWith("#CONNECT ")) {
+            isConnectionRequired = true;
         }
-        return false;
+    }
+
+    private void getConnection() throws Exception {
+        subscriber = server.getClientWorkerToConnect(clientIdToConnect());
+        isConnected = true;
+    }
+
+    public int clientIdToConnect() throws Exception {
+        if (isConnectionRequired && !isConnected) {
+            String[] s = lastInput.split(" ");
+            return Integer.parseInt(s[1]);
+        }
+        throw new Exception("Client doesn't require connection yet");
+    }
+
+    public void chat(){
+        if(lastInput != null) {
+            subscriber.writer.println(lastInput);
+            subscriber.writer.flush();
+        }
     }
 }
