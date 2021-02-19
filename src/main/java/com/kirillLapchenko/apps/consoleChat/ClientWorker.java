@@ -68,4 +68,6 @@ public class ClientWorker implements Runnable {
             subscriber.writer.flush();
         }
     }
+
+    public void doNothing(){}
 }
