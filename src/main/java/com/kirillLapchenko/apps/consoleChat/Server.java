@@ -14,6 +14,7 @@ public class Server implements Runnable, Observer {
     private PrintWriter out;
     private ServerSocketChannel server;
     private ArrayList<ClientWorker> clientList;
+    private ArrayList<ChatRoom> chatRooms;
     private int clientCount = 0;
 
     public Server() {
@@ -51,13 +52,13 @@ public class Server implements Runnable, Observer {
     }
 
     @Override
-    public ClientWorker getClientWorkerToConnect(int id) {
+    public void connectSubscribers(ClientWorker subscriber, int id) {
         ClientWorker temp = clientList.get(id);
-        return  temp;
+        newChatRoomCreated(subscriber, temp);
     }
 
     @Override
-    public void newChatRoomCreated(ChatRoom room) {
-
+    public void newChatRoomCreated(ClientWorker cw1, ClientWorker cw2) {
+        chatRooms.add(new ChatRoom(cw1, cw2));
     }
 }

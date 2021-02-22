@@ -2,7 +2,7 @@ package com.kirillLapchenko.apps.consoleChat;
 
 public interface Observer {
 
-    public ClientWorker getClientWorkerToConnect(int id);
+    public void connectSubscribers(ClientWorker subscriber, int id);
 
-    public void newChatRoomCreated(ChatRoom room);
+    public void newChatRoomCreated(ClientWorker cw1, ClientWorker cw2);
 }

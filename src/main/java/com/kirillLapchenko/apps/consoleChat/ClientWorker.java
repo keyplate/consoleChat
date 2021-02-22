@@ -13,7 +13,7 @@ public class ClientWorker implements Runnable {
     private boolean isConnectionRequired = false;
     private boolean isConnected = false;
     private Observer server;
-    private ClientWorker subscriber;
+    ChatRoom chatRoom;
 
     //Constructor
     ClientWorker(Socket client, int clientId, Observer server) throws IOException {
@@ -22,6 +22,8 @@ public class ClientWorker implements Runnable {
         reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         writer = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
         this.server = server;
+        writer.println("Welcome to the anonymous chatroom, your id is " + clientId);
+        writer.flush();
     }
 
     @Override
@@ -29,14 +31,12 @@ public class ClientWorker implements Runnable {
         while (true) {
             try {
                 lastInput = reader.readLine();
-                isConnectionCalled();
-                if(isConnectionRequired && !isConnected){
+                if(!isConnectionRequired)
+                    isConnectionCalled();
+                if(isConnectionRequired && !isConnected)
                     getConnection();
-                }
-                if(isConnected){
-                    chat();
-                    lastInput = null;
-                }
+                if(isConnected)
+                    chatRoom.sendMessage(this, lastInput);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -49,9 +49,13 @@ public class ClientWorker implements Runnable {
         }
     }
 
-    private void getConnection() throws Exception {
-        subscriber = server.getClientWorkerToConnect(clientIdToConnect());
-        isConnected = true;
+    public void getConnection(){
+        try {
+            int clientNum = clientIdToConnect();
+            server.connectSubscribers(this, clientNum);
+        } catch (Exception e) {
+            throw new RuntimeException("Client doesn't require connection yet");
+        }
     }
 
     public int clientIdToConnect() throws Exception {
@@ -62,12 +66,18 @@ public class ClientWorker implements Runnable {
         throw new Exception("Client doesn't require connection yet");
     }
 
-    public void chat(){
-        if(lastInput != null) {
-            subscriber.writer.println(lastInput);
-            subscriber.writer.flush();
-        }
+    public void receiveMessage(String message){
+        writer.println(message);
+        writer.flush();
     }
 
+    public void joinChat(ChatRoom chatRoom){
+        this.chatRoom = chatRoom;
+        changeConnectionState();
+    }
+
+    public void changeConnectionState(){
+        isConnected = !isConnected;
+    }
 
 }
