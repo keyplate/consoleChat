@@ -16,6 +16,7 @@ public class ClientWorker implements Runnable {
     ChatRoom chatRoom;
 
     //Constructor
+    //
     ClientWorker(Socket client, int clientId, Observer server) throws IOException {
         this.clientSocket = client;
         CLIENT_ID = clientId;
